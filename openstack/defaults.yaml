@@ -1,0 +1,40 @@
+ADMIN_PASS: 'secret'
+# Password of user admin
+CEILOMETER_DBPASS: 'secret'
+# Database password for the Telemetry service
+CEILOMETER_PASS: 'secret'
+# Password of Telemetry service user ceilometer
+CINDER_DBPASS: 'secret'
+# Database password for the Block Storage service
+CINDER_PASS: 'secret'
+# Password of Block Storage service user cinder
+DASH_DBPASS: 'secret'
+# Database password for the dashboard
+DEMO_PASS: 'secret'
+# Password of user demo
+GLANCE_DBPASS: 'secret'
+# Database password for Image service
+GLANCE_PASS: 'secret'
+# Password of Image service user glance
+HEAT_DBPASS: 'secret'
+# Database password for the Orchestration service
+HEAT_DOMAIN_PASS: 'secret'
+# Password of Orchestration domain
+HEAT_PASS: 'secret'
+# Password of Orchestration service user heat
+KEYSTONE_DBPASS: 'secret'
+# Database password of Identity service
+NEUTRON_DBPASS: 'secret'
+# Database password for the Networking service
+NEUTRON_PASS: 'secret'
+# Password of Networking service user neutron
+NOVA_DBPASS: 'secret'
+# Database password for Compute service
+NOVA_PASS: 'secret'
+# Password of Compute service user nova
+RABBIT_PASS: 'secret'
+# Password of user guest of RabbitMQ
+SWIFT_PASS: 'secret'
+# Password of Object Storage service user swift
+
+KEYSTONE_ADMIN_TOKEN: 'b21e1c41cc1433606fba'

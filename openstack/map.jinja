@@ -1,0 +1,108 @@
+{# Settings map file: 'openstack/map.jinja' #}
+{# To use, add: #}
+{# {% from "openstack/map.jinja" import openstack_settings with context %} #}
+{% set os_map = salt['grains.filter_by']({
+  'default': {
+    'ntp': {
+      'config_file': '/etc/chrony.conf',
+      'master_hostname': 'controller',
+      'servers': [
+        '0.centos.pool.ntp.org',
+        '1.centos.pool.ntp.org',
+        '2.centos.pool.ntp.org',
+        '3.centos.pool.ntp.org'
+      ],
+    },
+    'dependencies': {
+      'keystone': [
+        'openstack-keystone',
+        'memcached'
+      ],
+      'glance': [
+        'openstack-glance',
+        'python-glance',
+        'python-glanceclient'
+      ],
+      'nova_controller': [
+        'openstack-nova-api',
+        'openstack-nova-cert',
+        'openstack-nova-conductor',
+        'openstack-nova-console',
+        'openstack-nova-novncproxy',
+        'openstack-nova-scheduler',
+        'python-novaclient'
+      ],
+      'nova_compute': [
+        'openstack-nova-compute',
+        'sysfsutils',
+        'libguestfs-tools'
+      ]
+    },
+    'services': {
+      'glance': [
+        'openstack-glance-api',
+        'openstack-glance-registry'
+      ],
+      'nova_controller': [
+        'openstack-nova-api',
+        'openstack-nova-cert',
+        'openstack-nova-consoleauth',
+        'openstack-nova-scheduler',
+        'openstack-nova-conductor',
+        'openstack-nova-novncproxy'
+      ],
+      'nova_compute': [
+        'libvirtd',
+        'openstack-nova-compute'
+      ]
+    },
+    'db_table_test': {
+      'keystone': '',
+      'glance': '',
+      'nova_controller': ''
+    }
+  },
+  'Debian': {
+  },
+  'RedHat': {
+  },
+}, grain='os_family', merge=salt['pillar.get']('openstack:lookup'), base='default') %}
+
+{% set default_settings = {
+  'openstack': {
+    'passwords': {},
+    
+    'verbose_log': {
+      'keystone': 'True',
+      'glance': 'True',
+      'nova': 'True'
+    },
+    
+    'openstack_release': 'liberty',
+    
+    'rabbit_user_id': 'openstack',
+    
+    'keystone_public_port': '5000',
+    'keystone_admin_port': '35357',
+    'keystone_api_version': '3',
+    
+    'glance_image_store_path': '/var/lib/glance/images/',
+    
+    'nova_virt_type': 'qemu',
+    'nova_cpu_mode': 'custom',
+    'nova_cpu_model': 'qemu64',
+    'nova_enabled_apis': [
+      'osapi_compute',
+      'metadata'
+    ]
+  }
+}%}
+
+{% import_yaml "openstack/defaults.yaml" as default_passwords %}
+{% do default_settings.openstack.passwords.update(default_passwords) %}
+
+{# Merge os_map into default_settings dictionary #}
+{% do default_settings.openstack.update(os_map) %}
+
+{# Update settings defaults from pillar data #}
+{% set openstack_settings = salt['pillar.get']('openstack', default=default_settings.openstack, merge=True) %}
