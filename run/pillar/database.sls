@@ -6,6 +6,7 @@ mysql:
         - keystone
         - glance
         - nova
+        - neutron
     user:
         keystone:
             password: 'secret'
@@ -24,6 +25,12 @@ mysql:
             host: localhost
             databases:
                 - database: nova
+                  grants: ['all privileges']
+        neutron:
+            password: 'secret'
+            host: localhost
+            databases:
+                - database: neutron
                   grants: ['all privileges']
                   
 mongodb:

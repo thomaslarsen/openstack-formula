@@ -36,6 +36,20 @@
         'openstack-nova-compute',
         'sysfsutils',
         'libguestfs-tools'
+      ],
+      'neutron_controller': [
+        'openstack-neutron',
+        'openstack-neutron-ml2',
+        'openstack-neutron-linuxbridge',
+        'python-neutronclient',
+        'ebtables',
+        'ipset'
+      ],
+      'neutron_compute': [
+        'openstack-neutron',
+        'openstack-neutron-linuxbridge',
+        'ebtables',
+        'ipset'
       ]
     },
     'services': {
@@ -54,13 +68,91 @@
       'nova_compute': [
         'libvirtd',
         'openstack-nova-compute'
+      ],
+      'neutron_controller': [
+        'neutron-server',
+        'neutron-linuxbridge-agent',
+        'neutron-dhcp-agent',
+        'neutron-metadata-agent'
+      ],
+      'neutron_compute': [
+        'neutron-linuxbridge-agent'
       ]
     },
+    'config': {
+      'keystone': {
+        'keystone': {
+          'path': 'keystone',
+          'files': {
+            'keystone.conf': 'keystone'
+          }
+        }
+      },
+      'glance': {
+        'glance': {
+          'path': 'glance',
+          'files': {
+            'glance-api.conf': 'glance_api',
+            'glance-registry.conf': 'glance_registry'
+          }
+        }
+      },
+      'nova': {
+        'nova': {
+          'path': 'nova',
+          'files': {
+            'nova.conf': 'nova'
+          }
+        }
+      },
+      'neutron': {
+        'neutron': {
+          'path': 'neutron',
+          'files': {
+            'neutron.conf': 'neutron',
+            'dhcp_agent.ini': 'dhcp_agent',
+            'metadata_agent.ini': 'metadata_agent'
+          }
+        },
+        'ml2': {
+          'path': 'neutron/plugins/ml2',
+          'files': {
+            'ml2_conf.ini': 'ml2_conf',
+            'linuxbridge_agent.ini': 'linuxbridge_agent'
+          }
+        }
+      }
+    },
     'db_table_test': {
-      'keystone': '',
-      'glance': '',
-      'nova_controller': ''
-    }
+      'keystone': 'project',
+      'glance': 'images',
+      'nova_controller': 'instances',
+      'neutron_controller': 'networks'
+    },
+    
+    'config_base': '/etc',
+    
+    'default_domain': 'default',
+    'default_region': 'RegionOne',
+    
+    'vnc_port': '6080',
+    
+    'rpc_backend': 'rabbit',
+    'rabbit_user_id': 'openstack',
+    
+    'memcache_port': '11211',
+    
+    'keystone_public_port': '5000',
+    'keystone_admin_port': '35357',
+    'keystone_api_version': '3',
+    
+    'nova_port': '8774',
+    'nova_api_version': '2',    
+    'nova_apis': [
+      'osapi_compute',
+      'metadata'
+    ]
+    
   },
   'Debian': {
   },
@@ -68,38 +160,267 @@
   },
 }, grain='os_family', merge=salt['pillar.get']('openstack:lookup'), base='default') %}
 
+
+{% import_yaml "openstack/defaults.yaml" as default_passwords %}
+{% set passwords = salt['pillar.get']('openstack:passwords', default=default_passwords, merge=True) %}
+
+{% set hosts = salt['pillar.get'](
+  'openstack:hosts', 
+  default=
+  {
+      'controller': 'controller',
+      'database': 'controller',
+      'keystone': 'controller',
+      'rabbit': 'controller',
+      'glance': 'controller',
+      'metadata': 'controller'
+   }, 
+  merge=True) 
+%}
+
+{% set nodes = salt['pillar.get']('openstack:nodes') %}
+
 {% set default_settings = {
   'openstack': {
+    'openstack_release': 'liberty',
+
     'passwords': {},
+
+    'nodes': {},
+    
+    'hosts': {},
     
     'verbose_log': {
       'keystone': 'True',
       'glance': 'True',
-      'nova': 'True'
+      'nova': 'True',
+      'neutron': 'True'
+    },
+    'debug_log': {
+      'keystone': 'True',
+      'glance': 'True',
+      'nova': 'True',
+      'neutron': 'True'
+    },
+        
+    'keystone': {
+      'DEFAULT': {
+        'admin_token': passwords.get('KEYSTONE_ADMIN_TOKEN')
+      },
+      'database': {
+        'connection': 'mysql://keystone:' + passwords.get('KEYSTONE_DBPASS') + '@' + hosts.get('database') + '/keystone'
+      },
+      'memcache': {
+        'servers': hosts.get('keystone') + ':' + os_map.get('memcache_port')
+      },
+      'revoke': {
+        'driver': 'sql'
+      },
+      'token': {
+        'provider': 'uuid',
+        'driver': 'memcache',
+      }
     },
     
-    'openstack_release': 'liberty',
+    'glance_api': {
+      'DEFAULT': {
+        'notification_driver': 'noop'
+      },
+      'database': {
+        'connection': 'mysql://glance:' + passwords.get('GLANCE_DBPASS') + '@' + hosts.get('database') + '/glance'
+      },
+      'glance_store': {
+        'default_store': 'file',
+        'filesystem_store_datadir': '/var/lib/glance/images/',
+      },
+      'keystone_authtoken': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'project_domain_id': os_map.get('default_domain'),
+        'user_domain_id': os_map.get('default_domain'),
+        'project_name': 'service',
+        'username': 'glance',
+        'password': passwords.get('GLANCE_PASS')
+        },
+        'paste_deploy': {
+          'flavor': 'keystone'
+        }
+    },
+    'glance_registry': {
+      'DEFAULT': {
+        'notification_driver': 'noop'
+      },
+      'database': {
+        'connection': 'mysql://glance:' + passwords.get('GLANCE_DBPASS') + '@' + hosts.get('database') + '/glance'
+      },
+      'keystone_authtoken': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'project_domain_id': os_map.get('default_domain'),
+        'user_domain_id': os_map.get('default_domain'),
+        'project_name': 'service',
+        'username': 'glance',
+        'password': passwords.get('GLANCE_PASS')
+      }
+    },
     
-    'rabbit_user_id': 'openstack',
+    'nova': {
+      'DEFAULT': {
+        'auth_strategy': 'keystone',
+        'enabled_apis': ','.join(os_map.get('nova_apis')),
+        'my_ip': salt['grains.get']('ipv4')[0],
+        'novncproxy_base_url': 'http://'+ hosts.get('controller') + ':' + os_map.get('vnc_port') + '/vnc_auto.html',
+        'vncserver_listen': '$my_ip',
+        'vncserver_proxyclient_address': '$my_ip',
+        'network_api_class': 'nova.network.neutronv2.api.API',
+        'linuxnet_interface_driver': 'nova.network.linux_net.NeutronLinuxBridgeInterfaceDriver',
+        'security_group_api': 'neutron',
+        'compute_driver': 'libvirt.LibvirtDriver',
+        'firewall_driver': 'nova.virt.firewall.NoopFirewallDriver',
+        'rpc_backend': os_map.get('rpc_backend')      
+      },
+      'database': {
+        'connection': 'mysql://nova:' + passwords.get('NOVA_DBPASS') + '@' + hosts.get('database') + '/nova'
+      },
+      'glance': {
+        'home': hosts.get('glance')
+      },
+      'libvirt': {
+        'virt_type': 'qemu'
+      },
+      'keystone_authtoken': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'project_domain_id': os_map.get('default_domain'),
+        'user_domain_id': os_map.get('default_domain'),
+        'project_name': 'service',
+        'username': 'nova',
+        'password': passwords.get('NOVA_PASS')
+      },
+      'neutron': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'project_domain_id': os_map.get('default_domain'),
+        'user_domain_id': os_map.get('default_domain'),
+        'project_name': 'service',
+        'region_name': os_map.get('default_region'),
+        'username': 'neutron',
+        'password': passwords.get('NEUTRON_PASS'),
+        
+        'service_metadata_proxy': 'True',
+        'metadata_proxy_shared_secret': passwords.get('METADATA_SECRET')
+      },
+      'oslo_messaging_rabbit': {
+        'rabbit_host': hosts.get('rabbit'),
+        'rabbit_userid': os_map.get('rabbit_user_id'),
+        'rabbit_password': passwords.get('RABBIT_PASS')
+      }
+    },
     
-    'keystone_public_port': '5000',
-    'keystone_admin_port': '35357',
-    'keystone_api_version': '3',
-    
-    'glance_image_store_path': '/var/lib/glance/images/',
-    
-    'nova_virt_type': 'qemu',
-    'nova_cpu_mode': 'custom',
-    'nova_cpu_model': 'qemu64',
-    'nova_enabled_apis': [
-      'osapi_compute',
-      'metadata'
-    ]
+    'neutron': {
+      'DEFAULT': {
+        'auth_strategy': 'keystone',
+        'core_plugin': 'ml2',
+        'service_plugins': '',
+        'rpc_backend': os_map.get('rpc_backend'),
+        'notify_nova_on_port_status_changes': 'True',
+        'notify_nova_on_port_data_changes': 'True',
+        'nova_url': 'http://controller:8774/v2'
+      },
+      'database': {
+        'connection': 'mysql://neutron:' + passwords.get('NEUTRON_DBPASS') + '@' + hosts.get('database') + '/neutron'
+      },
+      'oslo_messaging_rabbit': {
+        'rabbit_host': hosts.get('rabbit'),
+        'rabbit_userid': os_map.get('rabbit_user_id'),
+        'rabbit_password': passwords.get('RABBIT_PASS')
+      },
+      'keystone_authtoken': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'project_domain_id': os_map.get('default_domain'),
+        'user_domain_id': os_map.get('default_domain'),
+        'project_name': 'service',
+        'username': 'neutron',
+        'password': passwords.get('NEUTRON_PASS')
+      },
+      'nova': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'project_domain_id': os_map.get('default_domain'),
+        'user_domain_id': os_map.get('default_domain'),
+        'project_name': 'service',
+        'region_name': os_map.get('default_region'),
+        'username': 'nova',
+        'password': passwords.get('NOVA_PASS')
+      },
+      'oslo_concurrency': {
+        'lock_path': '/var/lib/neutron/tmp'
+      }
+    },
+    'ml2_conf': {
+      'ml2': {
+        'type_drivers': 'flat,vlan',
+        'tenant_network_types': '',
+        'mechanism_drivers': 'linuxbridge',
+        'extension_drivers': 'port_security'
+      },
+      'ml2_type_flat': {
+        'flat_networks': 'public'
+      },
+      'securitygroup': {
+        'enable_ipset': 'True'
+      }
+    },
+    'linuxbridge_agent': {
+      'linux_bridge': {
+        'physical_interface_mappings': 'public:enp0s3'
+      },
+      'vxlan': {
+        'enable_vxlan': 'False'
+      },
+      'agent': {
+        'prevent_arp_spoofing': 'True'
+      },
+      'securitygroup': {
+        'enable_security_group': 'True',
+        'firewall_driver': 'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
+      }
+    },
+    'dhcp_agent': {
+      'DEFAULT': {
+        'interface_driver': 'neutron.agent.linux.interface.BridgeInterfaceDriver',
+        'dhcp_driver': 'neutron.agent.linux.dhcp.Dnsmasq',
+        'enable_isolated_metadata': 'True'
+      }
+    },
+    'metadata_agent': {
+      'DEFAULT': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'project_domain_id': os_map.get('default_domain'),
+        'user_domain_id': os_map.get('default_domain'),
+        'project_name': 'service',
+        'region_name': os_map.get('default_region'),
+        'username': 'neutron',
+        'password': passwords.get('NEUTRON_PASS'),
+        
+        'nova_metadata_ip': hosts.get('metadata'),
+        'metadata_proxy_shared_secret': passwords.get('METADATA_SECRET')
+      }
+    }
   }
 }%}
 
-{% import_yaml "openstack/defaults.yaml" as default_passwords %}
-{% do default_settings.openstack.passwords.update(default_passwords) %}
+{% do default_settings.openstack.passwords.update(passwords) %}
+{% do default_settings.openstack.hosts.update(hosts) %}
 
 {# Merge os_map into default_settings dictionary #}
 {% do default_settings.openstack.update(os_map) %}

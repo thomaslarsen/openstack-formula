@@ -65,7 +65,7 @@ create user {{ user_name }} role {{ role.role }} in project {{ project_name }}:
       - OS_IDENTITY_API_VERSION: "{{ openstack_settings.keystone_api_version }}"
     - unless: [ -n "$(openstack role list --user {{ user_name}} --project {{ project_name }})" ]
         
-create {{ user_name }} script:
+create {{ user_name }}-{{ project_name }} script:
   file.managed:
     - name: /root/{{ user_name }}-{{ project_name }}-openrc.sh
     - source: salt://openstack/files/client_script.sh

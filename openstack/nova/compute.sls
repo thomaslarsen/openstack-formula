@@ -15,5 +15,6 @@ nova_compute packages:
     - require:
       - pkg: nova_compute packages
     - watch:
-      - file: nova config
+      - file: nova-nova.conf
+      - file: neutron-neutron.conf
 {% endfor %}

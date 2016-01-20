@@ -7,22 +7,28 @@ glance packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.glance }}
       
-glance config:
-  file.recurse:
-    - name: /etc/glance
-    - source: salt://openstack/files/etc/glance
-    - makedirs: True
+{% for sub, element in openstack_settings.config.glance.items() %}
+{% for file, conf in element.files.items() %}
+{{ sub }}-{{ file }}:
+  file.managed:
+    - name: {{ openstack_settings.config_base }}/{{ element.path }}/{{ file }}
+    - source: salt://openstack/files/conf.jinja
     - template: jinja
+    - makedirs: True
     - context:
+        conf: {{ openstack_settings[conf] }}
+        title: {{ sub }}
         settings: {{ openstack_settings }}
-        
+{% endfor %}
+{% endfor %}
+
 glance database:
   cmd.run:
     - name: glance-manage db_sync
     - user: glance
     - require:
       - sls: mysql.server
-      - file: glance config
+      - file: glance-glance-api.conf
     - unless: mysql -s -N -u glance --password={{ openstack_settings.passwords["glance"|upper + "_DBPASS"] }} -D glance -h {{ openstack_settings.hosts.database }} -e "select count(*) from images;"
     
 {% for service in openstack_settings.services.glance %}
@@ -32,5 +38,5 @@ glance database:
     - require:
       - cmd: glance database
     - watch:
-      - file: glance config
+      - file: glance-glance-api.conf
 {% endfor %}

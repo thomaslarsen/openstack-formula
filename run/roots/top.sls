@@ -13,6 +13,8 @@ base:
         - openstack.glance
         - openstack.nova.controller
         - openstack.nova.compute
+        - openstack.neutron.controller
+        - openstack.neutron.compute
     'controller':
         - openstack.ntp.master
         - mysql.mariadb
@@ -22,5 +24,8 @@ base:
         - openstack.keystone
         - openstack.keystone.service
         - openstack.glance
+        - openstack.nova.controller
+        - openstack.neutron.controller
     'compute*':
         - openstack.nova.compute
+        - openstack.neutron.compute

@@ -1,12 +1,15 @@
 openstack:
+  nodes:
+    stack: 127.0.0.1
   hosts:
-    controller: localhost
-    compute: localhost
-    block: localhost
-    database: localhost
-    keystone: localhost
-    rabbit: localhost
-    glance: localhost
+    controller: stack
+    database: stack
+    keystone: stack
+    rabbit: stack
+    glance: stack
+    metadata: stack
+  passwords:
+    NEUTRON_PASS: secret
   service:
     keystone:
       description: Openstack Identity
@@ -47,6 +50,19 @@ openstack:
         admin:
           region: RegionOne
           url: "http://controller:8774/v2/%\\(tenant_id\\)s"
+    neutron:
+      description: "OpenStack Networking service"
+      type: network
+      endpoint:
+        public:
+          region: RegionOne
+          url: http://controller:9696
+        internal:
+          region: RegionOne
+          url: http://controller:9696
+        admin:
+          region: RegionOne
+          url: http://controller:9696
   role:
     - admin
     - user
@@ -55,15 +71,15 @@ openstack:
       password: secret
       domain: default
       endpoint: admin
-    demo:
-      password: secret
-      domain: default
-      endpoint: public
     glance:
       password: secret
       domain: default
       endpoint: admin
     nova:
+      password: secret
+      domain: default
+      endpoint: admin
+    neutron:
       password: secret
       domain: default
       endpoint: admin
@@ -88,14 +104,10 @@ openstack:
           domain: default
           description: Nova user
           role: admin
-    demo:
-      domain: default
-      description: Demo project
-      user:
-        demo:
+        neutron:
           domain: default
-          description: Demo user
-          role: user
+          description: Neutron user
+          role: admin
           
 rabbitmq:
   user:

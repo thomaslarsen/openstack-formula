@@ -1,0 +1,12 @@
+#
+# Configuration file for Openstack {{ title }}
+#
+# This file is managed by Salt.
+# Do NOT edit manually
+#
+{% for heading, section in conf.items() %}
+[{{heading}}]
+{% for key, value in section.items() -%}
+{{ key }}={{ value }}
+{% endfor -%}
+{% endfor %}

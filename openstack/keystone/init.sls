@@ -10,6 +10,8 @@ include:
 keystone packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.keystone }}
+    - watch_in:
+      - service: apache
     
 mod_wsgi:
   pkg.installed:
@@ -25,21 +27,27 @@ memcached:
     - require:
       - pkg: keystone packages
 
-keystone config:
-  file.recurse:
-    - name: /etc/keystone
-    - source: salt://openstack/files/etc/keystone
-    - makedirs: True
+{% for sub, element in openstack_settings.config.keystone.items() %}
+{% for file, conf in element.files.items() %}
+{{ sub }}-{{ file }}:
+  file.managed:
+    - name: {{ openstack_settings.config_base }}/{{ element.path }}/{{ file }}
+    - source: salt://openstack/files/conf.jinja
     - template: jinja
+    - makedirs: True
     - context:
+        conf: {{ openstack_settings[conf] }}
+        title: {{ sub }}
         settings: {{ openstack_settings }}
-        
+{% endfor %}
+{% endfor %}
+
 keystone database:
   cmd.run:
     - name: keystone-manage db_sync
     - user: keystone
     - require:
       - sls: mysql.server
-      - file: keystone config
+      - file: keystone-keystone.conf
     - unless: mysql -s -N -u keystone --password={{ openstack_settings.passwords["keystone"|upper + "_DBPASS"] }} -D keystone -h {{ openstack_settings.hosts.database }} -e "select count(*) from project;"
     

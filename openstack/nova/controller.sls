@@ -14,7 +14,7 @@ nova_controller database:
     - user: nova
     - require:
       - sls: mysql.server
-      - file: nova config
+      - file: nova-nova.conf
     - unless: mysql -s -N -u nova --password={{ openstack_settings.passwords["nova"|upper + "_DBPASS"] }} -D nova -h {{ openstack_settings.hosts.database }} -e "select count(*) from instances;"
     
 {% for service in openstack_settings.services.nova_controller %}
@@ -24,5 +24,6 @@ nova_controller database:
     - require:
       - cmd: nova_controller database
     - watch:
-      - file: nova config
+      - file: nova-nova.conf
+      - file: neutron-neutron.conf
 {% endfor %}

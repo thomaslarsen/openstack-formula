@@ -38,3 +38,4 @@ SWIFT_PASS: 'secret'
 # Password of Object Storage service user swift
 
 KEYSTONE_ADMIN_TOKEN: 'b21e1c41cc1433606fba'
+METADATA_SECRET: 'af0fc32169d15e21bb1e'
