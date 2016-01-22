@@ -36,6 +36,7 @@ memcached:
     - template: jinja
     - makedirs: True
     - context:
+        component: keystone
         conf: {{ openstack_settings[conf] }}
         title: {{ sub }}
         settings: {{ openstack_settings }}

@@ -1,11 +1,21 @@
 #
-# Configuration file for Openstack {{ title }}
+# Configuration file for Openstack {{ component }}
+#
+# Subcomponent: {{ title }}
 #
 # This file is managed by Salt.
 # Do NOT edit manually
 #
 {% for heading, section in conf.items() %}
 [{{heading}}]
+{% if heading == 'DEFAULT' -%}
+{% if settings.verbose_log[title] is defined -%}
+verbose = {{ settings.verbose_log[title] }}
+{% endif -%}
+{% if settings.debug_log[title] is defined -%}
+debug = {{ settings.debug_log[title] }}
+{% endif -%}
+{% endif -%}
 {% for key, value in section.items() -%}
 {{ key }}={{ value }}
 {% endfor -%}

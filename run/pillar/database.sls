@@ -1,5 +1,5 @@
 include:
-    - mysql
+  - mysql
 
 mysql:
     database:
@@ -7,6 +7,7 @@ mysql:
         - glance
         - nova
         - neutron
+        - cinder
     user:
         keystone:
             password: 'secret'
@@ -31,6 +32,12 @@ mysql:
             host: localhost
             databases:
                 - database: neutron
+                  grants: ['all privileges']
+        cinder:
+            password: 'secret'
+            host: localhost
+            databases:
+                - database: cinder
                   grants: ['all privileges']
                   
 mongodb:

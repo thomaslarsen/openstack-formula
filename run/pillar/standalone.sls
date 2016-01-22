@@ -8,116 +8,37 @@ openstack:
     rabbit: stack
     glance: stack
     metadata: stack
-  passwords:
-    NEUTRON_PASS: secret
-  service:
-    keystone:
-      description: Openstack Identity
-      type: identity
-      endpoint:
-        public:
-          region: RegionOne
-          url: http://controller:5000/v3
-        internal:
-          region: RegionOne
-          url: http://controller:5000/v3
-        admin:
-          region: RegionOne
-          url: http://controller:35357/v3
-    glance:
-      description: "OpenStack Image service"
-      type: image
-      endpoint:
-        public:
-          region: RegionOne
-          url: http://controller:9292
-        internal:
-          region: RegionOne
-          url: http://controller:9292
-        admin:
-          region: RegionOne
-          url: http://controller:9292
-    nova:
-      description: "OpenStack Compute service"
-      type: compute
-      endpoint:
-        public:
-          region: RegionOne
-          url: "http://controller:8774/v2/%\\(tenant_id\\)s"
-        internal:
-          region: RegionOne
-          url: "http://controller:8774/v2/%\\(tenant_id\\)s"
-        admin:
-          region: RegionOne
-          url: "http://controller:8774/v2/%\\(tenant_id\\)s"
-    neutron:
-      description: "OpenStack Networking service"
-      type: network
-      endpoint:
-        public:
-          region: RegionOne
-          url: http://controller:9696
-        internal:
-          region: RegionOne
-          url: http://controller:9696
-        admin:
-          region: RegionOne
-          url: http://controller:9696
-  role:
-    - admin
-    - user
-  user:
-    admin:
-      password: secret
-      domain: default
-      endpoint: admin
-    glance:
-      password: secret
-      domain: default
-      endpoint: admin
-    nova:
-      password: secret
-      domain: default
-      endpoint: admin
-    neutron:
-      password: secret
-      domain: default
-      endpoint: admin
-  project:
-    admin:
-      domain: default
-      description: Admin project
-      user:
-        admin:
-          domain: default
-          description: Admin user
-          role: admin
-    service:
-      domain: default
-      description: Service project
-      user:
-        glance:
-          domain: default
-          description: Glance user
-          role: admin
-        nova:
-          domain: default
-          description: Nova user
-          role: admin
-        neutron:
-          domain: default
-          description: Neutron user
-          role: admin
-          
-rabbitmq:
-  user:
-    openstack:
-      - password: secret
-      - force: True
-      - tags: monitoring, user
-      - perms:
-        - '/':
-          - '.*'
-          - '.*'
-          - '.*'
+    
+  loopback:
+    volumes:
+      loopback:
+        bs: 1k
+        seek: 5M
+        count: '0'
+        dev: loop1
+        volume_group: loop1-volumes
+        
+  cinder:
+    DEFAULT:
+      enabled_backends: loop1
+    loop1:
+      volume_driver: cinder.volume.drivers.lvm.LVMVolumeDriver
+      volume_group: loop1-volumes
+      iscsi_protocol: iscsi
+      iscsi_helper: lioadm
+      volume_backend_name: loop1
       
+  linuxbridge_agent: 
+    linux_bridge:
+      physical_interface_mappings: 'public:enp0s3'
+  ml2_conf:
+    ml2_type_flat:
+      flat_networks: public
+      
+  networks:
+    public:
+      shared: True
+      provider: 
+        physical_network: public
+        network_type: flat
+        

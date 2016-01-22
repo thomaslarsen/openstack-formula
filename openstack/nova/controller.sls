@@ -26,4 +26,5 @@ nova_controller database:
     - watch:
       - file: nova-nova.conf
       - file: neutron-neutron.conf
+      - file: cinder-cinder.conf
 {% endfor %}

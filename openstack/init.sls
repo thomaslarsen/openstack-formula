@@ -16,18 +16,9 @@ openstack dependencies:
         - require:
             - pkg: openstack core
       
-{% for component, conf in openstack_settings.config.items() %}
-{% for sub, element in conf.items() %}
-{% for file, conf in element.files.items() %}
-/tmp/openstack/{{ element.path }}/{{ file }}:
-  file.managed:
-    - source: salt://openstack/files/conf.jinja
-    - template: jinja
-    - makedirs: True
-    - context:
-        conf: {{ openstack_settings[conf] }}
-        title: {{ component }}
-        settings: {{ openstack_settings}}
-{% endfor %}
-{% endfor %}
+{% for host,ip in openstack_settings.nodes.items() %}
+{{ host }}-host:
+  host.present:
+    - name: {{ host }}
+    - ip: {{ ip }}
 {% endfor %}

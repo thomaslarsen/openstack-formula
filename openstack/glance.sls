@@ -16,6 +16,7 @@ glance packages:
     - template: jinja
     - makedirs: True
     - context:
+        component: glance
         conf: {{ openstack_settings[conf] }}
         title: {{ sub }}
         settings: {{ openstack_settings }}

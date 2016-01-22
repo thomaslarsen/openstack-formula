@@ -50,6 +50,19 @@
         'openstack-neutron-linuxbridge',
         'ebtables',
         'ipset'
+      ],
+      'horizon': [
+        'openstack-dashboard'
+      ],
+      'cinder_controller': [
+        'openstack-cinder',
+        'python-cinderclient'
+      ],
+      'cinder_storage': [
+        'lvm2',
+        'openstack-cinder',
+        'targetcli',
+        'python-oslo-policy'
       ]
     },
     'services': {
@@ -77,6 +90,15 @@
       ],
       'neutron_compute': [
         'neutron-linuxbridge-agent'
+      ],
+      'cinder_controller': [
+        'openstack-cinder-api',
+        'openstack-cinder-scheduler'
+      ],
+      'cinder_storage': [
+        'lvm2-lvmetad',
+        'openstack-cinder-volume',
+        'target'
       ]
     },
     'config': {
@@ -121,19 +143,31 @@
             'linuxbridge_agent.ini': 'linuxbridge_agent'
           }
         }
+      },
+      'cinder': {
+        'cinder': {
+          'path': 'cinder',
+          'files': {
+            'cinder.conf': 'cinder'
+          }
+        }
       }
     },
     'db_table_test': {
       'keystone': 'project',
       'glance': 'images',
       'nova_controller': 'instances',
-      'neutron_controller': 'networks'
+      'neutron_controller': 'networks',
+      'cinder_controller': 'volumes'
     },
     
     'config_base': '/etc',
     
+    'time_zone': 'Europe/London',
+    
     'default_domain': 'default',
     'default_region': 'RegionOne',
+    'default_role': 'user',
     
     'vnc_port': '6080',
     
@@ -146,13 +180,19 @@
     'keystone_admin_port': '35357',
     'keystone_api_version': '3',
     
+    'glance_port': '9292',
+    
     'nova_port': '8774',
     'nova_api_version': '2',    
     'nova_apis': [
       'osapi_compute',
       'metadata'
-    ]
+    ],
     
+    'neutron_port': '9696',
+    
+    'cinder_port': '8776',
+    'cinder_volumes_dir': '/var/lib/cinder/volumes'
   },
   'Debian': {
   },
@@ -162,11 +202,11 @@
 
 
 {% import_yaml "openstack/defaults.yaml" as default_passwords %}
-{% set passwords = salt['pillar.get']('openstack:passwords', default=default_passwords, merge=True) %}
+{% set passwords = salt['pillar.get']('openstack:passwords', default = default_passwords, merge = True) %}
 
 {% set hosts = salt['pillar.get'](
   'openstack:hosts', 
-  default=
+  default =
   {
       'controller': 'controller',
       'database': 'controller',
@@ -175,7 +215,7 @@
       'glance': 'controller',
       'metadata': 'controller'
    }, 
-  merge=True) 
+  merge = True) 
 %}
 
 {% set nodes = salt['pillar.get']('openstack:nodes') %}
@@ -189,6 +229,190 @@
     'nodes': {},
     
     'hosts': {},
+    
+    'user': {
+      'admin': {
+        'password': passwords.get('ADMIN_PASS'),
+        'domain': os_map.get('default_domain'),
+        'endpoint': 'admin'
+      },
+      'glance': {
+        'password': passwords.get('GLANCE_PASS'),
+        'domain': os_map.get('default_domain'),
+        'endpoint': 'admin'
+      },
+      'nova': {
+        'password': passwords.get('NOVA_PASS'),
+        'domain': os_map.get('default_domain'),
+        'endpoint': 'admin'
+      },
+      'neutron': {
+        'password': passwords.get('NEUTRON_PASS'),
+        'domain': os_map.get('default_domain'),
+        'endpoint': 'admin'
+      },
+      'cinder': {
+        'password': passwords.get('CINDER_PASS'),
+        'domain': os_map.get('default_domain'),
+        'endpoint': 'admin'
+      }
+    },
+    
+    'service': {
+      'keystone': {
+        'description': 'Openstack Identity',
+        'type': 'identity',
+        'endpoint': {
+          'public': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port') + '/v' + os_map.get('keystone_api_version')
+          },
+          'internal': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port') + '/v' + os_map.get('keystone_api_version')
+          },
+          'admin': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port') + '/v' + os_map.get('keystone_api_version')
+          }
+        }
+      },
+      'glance': {
+        'description': 'OpenStack Image service',
+        'type': 'image',
+        'endpoint': {
+          'public': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('glance_port')
+          },
+          'internal': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('glance_port')
+          },
+          'admin': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('glance_port')
+          }
+        }
+      },
+      'nova': {
+        'description': 'OpenStack Compute service',
+        'type': 'compute',
+        'endpoint': {
+          'public': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('nova_port') + '/v' + os_map.get('nova_api_version') + "/%\\(tenant_id\\)s"
+          },
+          'internal': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('nova_port') + '/v' + os_map.get('nova_api_version') + "/%\\(tenant_id\\)s"
+          },
+          'admin': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('nova_port') + '/v' + os_map.get('nova_api_version') + "/%\\(tenant_id\\)s"
+          }
+        }
+      },
+      'neutron': {
+        'description': 'OpenStack Networking service',
+        'type': 'network',
+        'endpoint': {
+          'public': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('neutron_port')
+          },
+          'internal': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('neutron_port')
+          },
+          'admin': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('neutron_port')
+          }
+        }
+      },
+      'cinder': {
+        'description': 'OpenStack Block storage service',
+        'type': 'volume',
+        'endpoint': {
+          'public': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('cinder_port') + "/v1/%\\(tenant_id\\)s"
+          },
+          'internal': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('cinder_port') + "/v1/%\\(tenant_id\\)s"
+          },
+          'admin': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('cinder_port') + "/v1/%\\(tenant_id\\)s"
+          }
+        }
+      },
+      'cinderv2': {
+        'description': 'OpenStack Block storage service',
+        'type': 'volumev2',
+        'endpoint': {
+          'public': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('cinder_port') + "/v2/%\\(tenant_id\\)s"
+          },
+          'internal': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('cinder_port') + "/v2/%\\(tenant_id\\)s"
+          },
+          'admin': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('cinder_port') + "/v2/%\\(tenant_id\\)s"
+          }
+        }
+      }
+    },
+    
+    'role': [
+      'admin',
+      'user'
+    ],
+    
+    'project': {
+      'admin': {
+        'domain': os_map.get('default_domain'),
+        'description': 'Admin project',
+        'user': {
+          'admin': {
+            'domain': os_map.get('default_domain'),
+            'description': 'Admin user',
+            'role': 'admin'
+          }
+        }
+      },
+      'service': {
+        'domain': os_map.get('default_domain'),
+        'description': 'Service project',
+        'user': {
+          'glance': {
+            'domain': os_map.get('default_domain'),
+            'description': 'Glance user',
+            'role': 'admin'
+          },
+          'nova': {
+            'domain': os_map.get('default_domain'),
+            'description': 'Nova user',
+            'role': 'admin'
+          },
+          'neutron': {
+            'domain': os_map.get('default_domain'),
+            'description': 'Neutron user',
+            'role': 'admin'
+          },
+          'cinder': {
+            'domain': os_map.get('default_domain'),
+            'description': 'Cinder user',
+            'role': 'admin'
+          }
+        }
+      }
+    },
     
     'verbose_log': {
       'keystone': 'True',
@@ -284,9 +508,6 @@
       'database': {
         'connection': 'mysql://nova:' + passwords.get('NOVA_DBPASS') + '@' + hosts.get('database') + '/nova'
       },
-      'glance': {
-        'home': hosts.get('glance')
-      },
       'libvirt': {
         'virt_type': 'qemu'
       },
@@ -299,6 +520,14 @@
         'project_name': 'service',
         'username': 'nova',
         'password': passwords.get('NOVA_PASS')
+      },
+      'oslo_messaging_rabbit': {
+        'rabbit_host': hosts.get('rabbit'),
+        'rabbit_userid': os_map.get('rabbit_user_id'),
+        'rabbit_password': passwords.get('RABBIT_PASS')
+      },
+      'glance': {
+        'home': hosts.get('glance')
       },
       'neutron': {
         'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
@@ -314,10 +543,8 @@
         'service_metadata_proxy': 'True',
         'metadata_proxy_shared_secret': passwords.get('METADATA_SECRET')
       },
-      'oslo_messaging_rabbit': {
-        'rabbit_host': hosts.get('rabbit'),
-        'rabbit_userid': os_map.get('rabbit_user_id'),
-        'rabbit_password': passwords.get('RABBIT_PASS')
+      'cinder': {
+        'os_region_name': os_map.get('default_region')
       }
     },
     
@@ -379,9 +606,6 @@
       }
     },
     'linuxbridge_agent': {
-      'linux_bridge': {
-        'physical_interface_mappings': 'public:enp0s3'
-      },
       'vxlan': {
         'enable_vxlan': 'False'
       },
@@ -415,8 +639,55 @@
         'nova_metadata_ip': hosts.get('metadata'),
         'metadata_proxy_shared_secret': passwords.get('METADATA_SECRET')
       }
+    },
+    
+    'horizon': {
+      'allowed_hosts': [
+        '*'
+      ],
+      'cache_backend': 'django.core.cache.backends.memcached.MemcachedCache',
+      
+      'enable_router': True,
+      'enable_quotas': True,
+      'enable_ipv6': True,
+      'enable_distributed_router': False,
+      'enable_ha_router': False,
+      'enable_lb': True,
+      'enable_firewall': True,
+      'enable_vpn': True,
+      'enable_fip_topology_check': True
+    },
+    
+    'cinder': {
+      'DEFAULT': {
+        'my_ip': salt['grains.get']('ipv4')[0],
+        'auth_strategy': 'keystone',
+        'rpc_backend': os_map.get('rpc_backend'),
+        'glance_host': hosts.get('glance')
+      },
+      'database': {
+        'connection': 'mysql://cinder:' + passwords.get('CINDER_DBPASS') + '@' + hosts.get('database') + '/cinder'
+      },
+      'oslo_messaging_rabbit': {
+        'rabbit_host': hosts.get('rabbit'),
+        'rabbit_userid': os_map.get('rabbit_user_id'),
+        'rabbit_password': passwords.get('RABBIT_PASS')
+      },
+      'keystone_authtoken': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'project_domain_id': os_map.get('default_domain'),
+        'user_domain_id': os_map.get('default_domain'),
+        'project_name': 'service',
+        'username': 'cinder',
+        'password': passwords.get('CINDER_PASS')
+      },
+      'oslo_concurrency': {
+        'lock_path': '/var/lib/cinder/tmp'
+      }
     }
-  }
+  },
 }%}
 
 {% do default_settings.openstack.passwords.update(passwords) %}
