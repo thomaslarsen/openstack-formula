@@ -19,8 +19,9 @@ cinder_controller database:
     
 {% if openstack_settings.services.cinder_controller is defined %}
 {% for service in openstack_settings.services.cinder_controller %}
-{{ service }}:
+cinder_controller-{{ service }}:
   service.running:
+    - name: {{ service }}
     - enable: True
     - require:
       - pkg: cinder_controller packages

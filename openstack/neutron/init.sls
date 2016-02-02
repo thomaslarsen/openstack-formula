@@ -5,6 +5,7 @@ include:
     
 {% for sub, element in openstack_settings.config.neutron.items() %}
 {% for file, conf in element.files.items() %}
+{% if openstack_settings[conf] is defined %}
 {{ sub }}-{{ file }}:
   file.managed:
     - name: {{ openstack_settings.config_base }}/{{ element.path }}/{{ file }}
@@ -16,6 +17,7 @@ include:
         conf: {{ openstack_settings[conf] }}
         title: {{ sub }}
         settings: {{ openstack_settings }}
+{% endif %}
 {% endfor %}
 {% endfor %}
 
@@ -24,3 +26,7 @@ include:
     - target: {{ openstack_settings.config_base }}/neutron/plugins/ml2/ml2_conf.ini
     - require:
       - file: ml2-ml2_conf.ini
+      
+NetworkManager:
+  service.dead:
+    - enable: False

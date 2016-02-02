@@ -1,23 +1,30 @@
 {% from "openstack/map.jinja" import openstack_settings with context %}
+{% set loopback = openstack_settings.loopback %}
 
-include:
-  - openstack.cinder
-
-{% for image,dd in openstack_settings.loopback.volumes.items() %}
-create sparse image {{ image }} for loopback {{ dd.dev }}:
+{{ loopback.volumes_dir }}:
+  file.directory:
+    - name: {{ loopback.volumes_dir }}
+    - user: {{ loopback.user }}
+    - group: {{ loopback.group }}
+    - makedirs: True
+    
+{% for image,dd in loopback.volumes.items() %}
+create image {{ image }} for loopback {{ dd.dev }}:
   cmd.run:
     - name: dd of={{ image }} bs={{ dd.bs }} seek={{ dd.seek }} count={{ dd.count }}
-    - cwd: {{ openstack_settings.cinder_volumes_dir }}
-    - user: cinder
-    - group: cinder
-    - unless: test -e {{ openstack_settings.cinder_volumes_dir }}/{{ image }}
+    - cwd: {{ loopback.volumes_dir }}
+    - user: {{ loopback.user }}
+    - group: {{ loopback.group }}
+    - require:
+      - file: {{ loopback.volumes_dir }}
+    - unless: test -e {{ loopback.volumes_dir }}/{{ image }}
     
 add loopback dev {{ dd.dev }}:
   cmd.run:
-    - name: losetup /dev/{{ dd.dev }} {{ openstack_settings.cinder_volumes_dir }}/{{ image }}
+    - name: losetup /dev/{{ dd.dev }} {{ loopback.volumes_dir }}/{{ image }}
     - unless: test -e /dev/{{ dd.dev }}
     - require:
-      - cmd: create sparse image {{ image }} for loopback {{ dd.dev }}
+      - cmd: create image {{ image }} for loopback {{ dd.dev }}
   
 pv for /dev/{{ dd.dev }}:
   lvm.pv_present:

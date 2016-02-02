@@ -10,8 +10,9 @@ cinder_storage packages:
         
 {% if openstack_settings.services.cinder_storage is defined %}
 {% for service in openstack_settings.services.cinder_storage %}
-{{ service }}:
+cinder_storage-{{ service }}:
   service.running:
+    - name: {{ service }}
     - enable: True
     - require:
       - pkg: cinder_storage packages

@@ -18,8 +18,9 @@ nova_controller database:
     - unless: mysql -s -N -u nova --password={{ openstack_settings.passwords["nova"|upper + "_DBPASS"] }} -D nova -h {{ openstack_settings.hosts.database }} -e "select count(*) from instances;"
     
 {% for service in openstack_settings.services.nova_controller %}
-{{ service }}:
+nova_controller-{{ service }}:
   service.running:
+    - name: {{ service }}
     - enable: True
     - require:
       - cmd: nova_controller database

@@ -1,4 +1,5 @@
 {% from "openstack/map.jinja" import openstack_settings with context %}
+{% set admin_url = "http://" + openstack_settings.hosts.keystone + ":" + openstack_settings.keystone_admin_port + "/v" + openstack_settings.keystone_api_version %}
 
 include:
     - openstack
@@ -41,3 +42,24 @@ glance database:
     - watch:
       - file: glance-glance-api.conf
 {% endfor %}
+
+{% if openstack_settings.images is defined %}
+{% for name, image in openstack_settings.images.items() %}
+download image {{ name }}:
+  file.managed:
+    - name: /tmp/glance-image-{{ name }}
+    - source: {{ image.url }}
+    - source_hash: {{ image.checksum }}
+  
+add image {{ name }}: 
+  cmd.run:
+    - name: glance image-create --name {{ name }} --file glance-image-{{ name }} --disk-format {{ image.disk_format }} --container-format {{ image.container_format }} {% if image.public is defined %}--visibility public{% endif %}
+    - env:
+      - OS_TOKEN: "{{ openstack_settings.passwords.KEYSTONE_ADMIN_TOKEN }}" 
+      - OS_URL: "{{ admin_url }}"
+      - OS_IDENTITY_API_VERSION: "{{ openstack_settings.keystone_api_version }}"
+    - require:
+      - file: download image {{ name }}
+    - unless: nova image-show {{ name }}
+{% endfor %}
+{% endif %}

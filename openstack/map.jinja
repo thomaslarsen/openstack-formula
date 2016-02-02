@@ -13,6 +13,8 @@
         '3.centos.pool.ntp.org'
       ],
     },
+    
+    
     'dependencies': {
       'keystone': [
         'openstack-keystone',
@@ -37,20 +39,66 @@
         'sysfsutils',
         'libguestfs-tools'
       ],
-      'neutron_controller': [
-        'openstack-neutron',
-        'openstack-neutron-ml2',
-        'openstack-neutron-linuxbridge',
-        'python-neutronclient',
-        'ebtables',
-        'ipset'
-      ],
-      'neutron_compute': [
-        'openstack-neutron',
-        'openstack-neutron-linuxbridge',
-        'ebtables',
-        'ipset'
-      ],
+      'neutron_controller': {
+        'common': [
+          'openstack-neutron',
+          'openstack-neutron-ml2',
+          'python-neutronclient',
+          'ebtables',
+          'ipset'
+        ],
+        'agents': {
+          'metadata': [
+          ],
+          'dhcp': [
+          ],
+          'l3': [
+          ],
+          'linuxbridge': [
+          ]
+        },
+        'drivers': {
+          'fwaas': [
+            'openstack-neutron-fwaas'
+          ]
+        }
+      },
+      'neutron_compute': {
+        'common': [
+          'openstack-neutron-ml2',
+          'ebtables',
+          'ipset'
+        ],
+        'agents': {
+          'metadata': [
+          ],
+          'dhcp': [
+          ],
+          'l3': [
+          ],
+          'linuxbridge': [
+            'openstack-neutron-linuxbridge',
+          ]
+        }
+      },
+      'neutron_network': {
+        'common': [
+          'openstack-neutron-ml2',
+          'ebtables',
+          'ipset'
+        ],
+        'agents': {
+          'metadata': [
+          ],
+          'dhcp': [
+          ],
+          'l3': [
+          ],
+          'linuxbridge': [
+            'openstack-neutron-linuxbridge',
+          ]
+        }
+      },
       'horizon': [
         'openstack-dashboard'
       ],
@@ -63,8 +111,16 @@
         'openstack-cinder',
         'targetcli',
         'python-oslo-policy'
+      ],
+      'heat': [
+        'openstack-heat-api',
+        'openstack-heat-api-cfn',
+        'openstack-heat-engine',
+        'python-heatclient'
       ]
     },
+    
+    
     'services': {
       'glance': [
         'openstack-glance-api',
@@ -82,15 +138,58 @@
         'libvirtd',
         'openstack-nova-compute'
       ],
-      'neutron_controller': [
-        'neutron-server',
-        'neutron-linuxbridge-agent',
-        'neutron-dhcp-agent',
-        'neutron-metadata-agent'
-      ],
-      'neutron_compute': [
-        'neutron-linuxbridge-agent'
-      ],
+      'neutron_controller': {
+        'common':  [
+          'neutron-server'
+        ],
+        'agents': {
+          'metadata': [
+          ],
+          'dhcp': [
+          ],
+          'l3': [
+          ],
+          'linuxbridge': [
+          ]
+        },
+        'drivers': {
+          'fwaas': [
+          ]
+        }
+      },
+      'neutron_compute': {
+        'common':  [
+        ],
+        'agents': {
+          'metadata': [
+          ],
+          'dhcp': [
+          ],
+          'l3': [
+          ],
+          'linuxbridge': [
+            'neutron-linuxbridge-agent'
+          ]
+        }
+      },
+      'neutron_network': {
+        'common':  [
+        ],
+        'agents': {
+          'metadata': [
+            'neutron-metadata-agent'
+          ],
+          'dhcp': [
+            'neutron-dhcp-agent',
+          ],
+          'l3': [
+            'neutron-l3-agent'
+          ],
+          'linuxbridge': [
+            'neutron-linuxbridge-agent'
+          ]
+        }
+      },
       'cinder_controller': [
         'openstack-cinder-api',
         'openstack-cinder-scheduler'
@@ -99,8 +198,15 @@
         'lvm2-lvmetad',
         'openstack-cinder-volume',
         'target'
+      ],
+      'heat': [
+        'openstack-heat-api',
+        'openstack-heat-api-cfn',
+        'openstack-heat-engine'
       ]
     },
+    
+    
     'config': {
       'keystone': {
         'keystone': {
@@ -132,15 +238,46 @@
           'path': 'neutron',
           'files': {
             'neutron.conf': 'neutron',
-            'dhcp_agent.ini': 'dhcp_agent',
-            'metadata_agent.ini': 'metadata_agent'
           }
         },
         'ml2': {
           'path': 'neutron/plugins/ml2',
           'files': {
             'ml2_conf.ini': 'ml2_conf',
+          }
+        }
+      },
+      'neutron_agents': {
+        'linuxbridge': {
+          'path': 'neutron/plugins/ml2',
+          'files': {
             'linuxbridge_agent.ini': 'linuxbridge_agent'
+          }
+        },
+        'dhcp' : {
+          'path': 'neutron',
+          'files': {
+            'dhcp_agent.ini': 'dhcp_agent',
+          }
+        },
+        'metadata': {
+          'path': 'neutron',
+          'files': {
+            'metadata_agent.ini': 'metadata_agent',
+          }
+        },
+        'l3': {
+          'path': 'neutron',
+          'files': {
+            'l3_agent.ini': 'l3_agent'
+          }
+        },
+      },
+      'neutron_drivers': {  
+        'fwaas': {
+          'path': 'neutron',
+          'files': {
+            'fwaas_driver.ini': 'fwaas_driver'
           }
         }
       },
@@ -151,14 +288,25 @@
             'cinder.conf': 'cinder'
           }
         }
+      },
+      'heat': {
+        'heat': {
+          'path': 'heat',
+          'files': {
+            'heat.conf': 'heat'
+          }
+        }
       }
     },
+    
+    
     'db_table_test': {
       'keystone': 'project',
       'glance': 'images',
       'nova_controller': 'instances',
       'neutron_controller': 'networks',
-      'cinder_controller': 'volumes'
+      'cinder_controller': 'volumes',
+      'heat': 'stack'
     },
     
     'config_base': '/etc',
@@ -190,9 +338,25 @@
     ],
     
     'neutron_port': '9696',
+    'neutron_agents': [
+      'metadata',
+      'dhcp',
+      'l3',
+      'linuxbridge'
+    ],
+    'neutron_drivers': [
+      'fwaas'
+    ],
     
     'cinder_port': '8776',
-    'cinder_volumes_dir': '/var/lib/cinder/volumes'
+    'cinder_volumes_dir': '/var/lib/cinder/volumes',
+    
+    'heat_orchestration_port': '8004',
+    'heat_cloudformation_port': '8000',
+    'heat_metadata_server_port': '8000',
+    'heat_waitcondition_server_port': '8000',
+    'heat_domain_admin': 'heat_domain_admin',
+    'heat_user_domain_name': 'heat'
   },
   'Debian': {
   },
@@ -204,8 +368,7 @@
 {% import_yaml "openstack/defaults.yaml" as default_passwords %}
 {% set passwords = salt['pillar.get']('openstack:passwords', default = default_passwords, merge = True) %}
 
-{% set hosts = salt['pillar.get'](
-  'openstack:hosts', 
+{% set hosts = salt['pillar.get']('openstack:hosts', 
   default =
   {
       'controller': 'controller',
@@ -214,9 +377,7 @@
       'rabbit': 'controller',
       'glance': 'controller',
       'metadata': 'controller'
-   }, 
-  merge = True) 
-%}
+   }, merge = True) %}
 
 {% set nodes = salt['pillar.get']('openstack:nodes') %}
 
@@ -255,6 +416,30 @@
         'password': passwords.get('CINDER_PASS'),
         'domain': os_map.get('default_domain'),
         'endpoint': 'admin'
+      },
+      'heat': {
+        'password': passwords.get('HEAT_PASS'),
+        'domain': os_map.get('default_domain'),
+        'endpoint': 'admin'
+      },
+      os_map.get('heat_domain_admin'): {
+        'password': passwords.get('HEAT_DOMAIN_PASS'),
+        'domain': os_map.get('heat_user_domain_name'),
+        'endpoint': 'admin'
+      }
+    },
+    
+    'domain': {
+      os_map.get('heat_user_domain_name'): {
+        'description': 'Stack projects and users',
+        'user': {
+          os_map.get('heat_domain_admin'): {
+            'description': 'Admin user',
+            'role': [
+              'admin'
+            ]
+          }
+        }
       }
     },
     
@@ -366,12 +551,50 @@
             'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('cinder_port') + "/v2/%\\(tenant_id\\)s"
           }
         }
+      },
+      'heat': {
+        'description': 'OpenStack Orchestration service',
+        'type': 'orchestration',
+        'endpoint': {
+          'public': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('heat_orchestration_port') + "/v1/%\\(tenant_id\\)s"
+          },
+          'internal': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('heat_orchestration_port') + "/v1/%\\(tenant_id\\)s"
+          },
+          'admin': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('heat_orchestration_port') + "/v1/%\\(tenant_id\\)s"
+          }
+        }
+      },
+      'heat-cnf': {
+        'description': 'OpenStack Cloudformation service',
+        'type': 'cloudformation',
+        'endpoint': {
+          'public': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('heat_cloudformation_port') + "/v1/%\\(tenant_id\\)s"
+          },
+          'internal': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('heat_cloudformation_port') + "/v1/%\\(tenant_id\\)s"
+          },
+          'admin': {
+            'region': os_map.get('default_region'),
+            'url': 'http://' + hosts.get('keystone') + ':' + os_map.get('heat_cloudformation_port') + "/v1/%\\(tenant_id\\)s"
+          }
+        }
       }
     },
     
     'role': [
       'admin',
-      'user'
+      'user',
+      'heat_stack_owner',
+      'heat_stack_user'
     ],
     
     'project': {
@@ -382,7 +605,10 @@
           'admin': {
             'domain': os_map.get('default_domain'),
             'description': 'Admin user',
-            'role': 'admin'
+            'role': [
+              'admin',
+              'heat_stack_owner'
+            ]
           }
         }
       },
@@ -393,22 +619,37 @@
           'glance': {
             'domain': os_map.get('default_domain'),
             'description': 'Glance user',
-            'role': 'admin'
+            'role': [
+              'admin'
+            ]
           },
           'nova': {
             'domain': os_map.get('default_domain'),
             'description': 'Nova user',
-            'role': 'admin'
+            'role': [
+              'admin'
+            ]
           },
           'neutron': {
             'domain': os_map.get('default_domain'),
             'description': 'Neutron user',
-            'role': 'admin'
+            'role': [
+              'admin'
+            ]
           },
           'cinder': {
             'domain': os_map.get('default_domain'),
             'description': 'Cinder user',
-            'role': 'admin'
+            'role':  [
+              'admin'
+            ]
+          },
+          'heat': {
+            'domain': os_map.get('default_domain'),
+            'description': 'Heat user',
+            'role':  [
+              'admin'
+            ]
           }
         }
       }
@@ -457,7 +698,10 @@
         'default_store': 'file',
         'filesystem_store_datadir': '/var/lib/glance/images/',
       },
-      'keystone_authtoken': {
+      'paste_deploy': {
+        'flavor': 'keystone'
+      },
+      'keystone_authtoken':    {
         'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
         'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
         'auth_plugin': 'password',
@@ -466,10 +710,8 @@
         'project_name': 'service',
         'username': 'glance',
         'password': passwords.get('GLANCE_PASS')
-        },
-        'paste_deploy': {
-          'flavor': 'keystone'
-        }
+      }
+  
     },
     'glance_registry': {
       'DEFAULT': {
@@ -494,7 +736,6 @@
       'DEFAULT': {
         'auth_strategy': 'keystone',
         'enabled_apis': ','.join(os_map.get('nova_apis')),
-        'my_ip': salt['grains.get']('ipv4')[0],
         'novncproxy_base_url': 'http://'+ hosts.get('controller') + ':' + os_map.get('vnc_port') + '/vnc_auto.html',
         'vncserver_listen': '$my_ip',
         'vncserver_proxyclient_address': '$my_ip',
@@ -507,9 +748,6 @@
       },
       'database': {
         'connection': 'mysql://nova:' + passwords.get('NOVA_DBPASS') + '@' + hosts.get('database') + '/nova'
-      },
-      'libvirt': {
-        'virt_type': 'qemu'
       },
       'keystone_authtoken': {
         'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
@@ -551,12 +789,10 @@
     'neutron': {
       'DEFAULT': {
         'auth_strategy': 'keystone',
-        'core_plugin': 'ml2',
-        'service_plugins': '',
         'rpc_backend': os_map.get('rpc_backend'),
         'notify_nova_on_port_status_changes': 'True',
         'notify_nova_on_port_data_changes': 'True',
-        'nova_url': 'http://controller:8774/v2'
+        'nova_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('nova_port') + '/v' + os_map.get('nova_api_version')
       },
       'database': {
         'connection': 'mysql://neutron:' + passwords.get('NEUTRON_DBPASS') + '@' + hosts.get('database') + '/neutron'
@@ -593,22 +829,15 @@
     },
     'ml2_conf': {
       'ml2': {
-        'type_drivers': 'flat,vlan',
-        'tenant_network_types': '',
-        'mechanism_drivers': 'linuxbridge',
         'extension_drivers': 'port_security'
       },
-      'ml2_type_flat': {
-        'flat_networks': 'public'
-      },
       'securitygroup': {
-        'enable_ipset': 'True'
+        'enable_ipset': 'True',
+        'enable_security_group': 'True',
+        'firewall_driver': 'neutron.agent.linux.iptables_firewall.IptablesFirewallDriver'
       }
     },
     'linuxbridge_agent': {
-      'vxlan': {
-        'enable_vxlan': 'False'
-      },
       'agent': {
         'prevent_arp_spoofing': 'True'
       },
@@ -638,6 +867,12 @@
         
         'nova_metadata_ip': hosts.get('metadata'),
         'metadata_proxy_shared_secret': passwords.get('METADATA_SECRET')
+      }
+    },
+    'fwaas_driver': {
+      'fwaas': {
+        'driver': 'neutron_fwaas.services.firewall.drivers.linux.iptables_fwaas.IptablesFwaasDriver',
+        'enabled': 'True'
       }
     },
     
@@ -686,15 +921,61 @@
       'oslo_concurrency': {
         'lock_path': '/var/lib/cinder/tmp'
       }
+    },
+    
+    'heat': {
+      'DEFAULT': {
+        'rpc_backend': os_map.get('rpc_backend'),
+        'stack_domain_admin': os_map.get('heat_domain_admin'),
+        'stack_domain_admin_password': passwords.get('HEAT_DOMAIN_PASS'),
+        'stack_user_domain_name': os_map.get('heat_user_domain_name'),
+        'heat_metadata_server_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('heat_metadata_server_port'),
+        'heat_waitcondition_server_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('heat_waitcondition_server_port') + '/v1/waitcondition'
+      },
+      'database': {
+        'connection': 'mysql://heat:' + passwords.get('HEAT_DBPASS') + '@' + hosts.get('database') + '/heat'
+      },
+      'oslo_messaging_rabbit': {
+        'rabbit_host': hosts.get('rabbit'),
+        'rabbit_userid': os_map.get('rabbit_user_id'),
+        'rabbit_password': passwords.get('RABBIT_PASS')
+      },
+      'keystone_authtoken': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'project_domain_id': os_map.get('default_domain'),
+        'user_domain_id': os_map.get('default_domain'),
+        'project_name': 'service',
+        'username': 'heat',
+        'password': passwords.get('HEAT_PASS')
+      },
+      'trustee': {
+        'auth_url': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_admin_port'),
+        'auth_plugin': 'password',
+        'user_domain_id': os_map.get('default_domain'),
+        'username': 'heat',
+        'password': passwords.get('HEAT_PASS')
+        
+      },
+      'clients_keystone': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        
+      },
+      'ec2authtoken': {
+        'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
+        
+      }
     }
   },
 }%}
 
-{% do default_settings.openstack.passwords.update(passwords) %}
-{% do default_settings.openstack.hosts.update(hosts) %}
-
 {# Merge os_map into default_settings dictionary #}
 {% do default_settings.openstack.update(os_map) %}
+
+{% do default_settings.openstack.passwords.update(passwords) %}
+{% do default_settings.openstack.hosts.update(hosts) %}
+{% do default_settings.openstack.nodes.update(nodes) %}
 
 {# Update settings defaults from pillar data #}
 {% set openstack_settings = salt['pillar.get']('openstack', default=default_settings.openstack, merge=True) %}

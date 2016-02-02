@@ -9,8 +9,9 @@ nova_compute packages:
     - pkgs: {{ openstack_settings.dependencies.nova_compute }}
     
 {% for service in openstack_settings.services.nova_compute %}
-{{ service }}:
+nova_compute-{{ service }}:
   service.running:
+    - name: {{ service }}
     - enable: True
     - require:
       - pkg: nova_compute packages

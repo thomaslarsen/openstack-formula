@@ -6,3 +6,4 @@ base:
         - demo_project
         - database
         - keystone
+        - neutron_classic

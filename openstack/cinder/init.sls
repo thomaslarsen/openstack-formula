@@ -24,5 +24,6 @@ cinder volume dir:
     - name: {{ openstack_settings.cinder_volumes_dir }}
     - user: cinder
     - group: cinder
+    - makedirs: True
   
     

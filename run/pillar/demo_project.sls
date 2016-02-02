@@ -12,9 +12,7 @@ openstack:
         demo:
           domain: default
           description: Demo user
-          role: user
-        admin:
-          domain: default
-          description: Admin user
-          role: admin
+          role:
+            - admin
+            - heat_stack_owner
           

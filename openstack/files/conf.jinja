@@ -17,6 +17,14 @@ debug = {{ settings.debug_log[title] }}
 {% endif -%}
 {% endif -%}
 {% for key, value in section.items() -%}
+{% if value is string -%}
 {{ key }}={{ value }}
+{% else -%}
+{% if value is iterable -%}
+{{ key }}={{ value|join(',') }}
+{% else -%}
+{{ key }}={{ value }}
+{% endif -%}
+{% endif -%}
 {% endfor -%}
 {% endfor %}

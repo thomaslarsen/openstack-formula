@@ -8,6 +8,7 @@ mysql:
         - nova
         - neutron
         - cinder
+        - heat
     user:
         keystone:
             password: 'secret'
@@ -38,6 +39,12 @@ mysql:
             host: localhost
             databases:
                 - database: cinder
+                  grants: ['all privileges']
+        heat:
+            password: 'secret'
+            host: localhost
+            databases:
+                - database: heat
                   grants: ['all privileges']
                   
 mongodb:
