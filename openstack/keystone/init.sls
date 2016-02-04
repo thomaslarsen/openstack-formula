@@ -10,6 +10,8 @@ include:
 keystone packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.keystone }}
+    - require:
+      - pkg: openstack dependencies
     - watch_in:
       - service: apache
     

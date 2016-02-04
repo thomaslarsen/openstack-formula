@@ -32,7 +32,9 @@ neutron-{{ driver }}-{{ file }}:
 
 neutron_driver packages:
   pkg.installed:
-    - pkgs: {{ driver_packages }}   
+    - pkgs: {{ driver_packages }}
+    - require:
+      - pkg: openstack dependencies
 
 
 # Install Neutron itself
@@ -40,6 +42,8 @@ neutron_driver packages:
 neutron_controller packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.neutron_controller.common }}
+    - require:
+      - pkg: openstack dependencies
     
 neutron_controller database:
   cmd.run:

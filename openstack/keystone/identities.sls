@@ -48,6 +48,7 @@ create domain {{ domain_name }}:
     - require:
       - cmd: keystone database
     - unless: openstack domain show {{ domain_name }}
+    
 {% if domain.user is defined %}
 {% for user_name, role in domain.user.items() %}
 {% for role_name in role.role %}
@@ -86,6 +87,7 @@ create project {{ project_name }}:
     - require:
       - cmd: keystone database
     - unless: openstack project show {{ project_name }}
+    
 {% if project.user is defined %}
 {% for user_name, role in project.user.items() %}
 {% for role_name in role.role %}

@@ -7,6 +7,8 @@ include:
 nova_compute packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.nova_compute }}
+    - require:
+      - pkg: openstack dependencies
     
 {% for service in openstack_settings.services.nova_compute %}
 nova_compute-{{ service }}:

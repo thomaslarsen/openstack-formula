@@ -51,7 +51,8 @@ openstack:
   linuxbridge_agent: 
     linux_bridge:
       physical_interface_mappings: 
-        - 'public:enp0s3' 
+        - 'public:enp0s3'
+    vxlan:
       local_ip: = {{ my_ip }}      
 
       

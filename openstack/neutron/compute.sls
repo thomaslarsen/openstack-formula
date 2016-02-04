@@ -6,6 +6,8 @@ include:
 neutron_compute packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.neutron_compute.common }}
+    - require:
+      - pkg: openstack dependencies
     
 {% if openstack_settings.services.neutron_compute.common is defined %}
 {% for service in openstack_settings.services.neutron_compute.common %}

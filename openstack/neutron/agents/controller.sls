@@ -11,6 +11,8 @@ include:
 {{ node_class }}_{{ agent }} packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies[node_class].agents[agent] }}
+    - require:
+      - pkg: openstack dependencies
 {% endif %}    
 
 {% set config_files = [] %}

@@ -6,6 +6,8 @@ include:
 horizon packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.horizon }}
+    - require:
+      - pkg: openstack dependencies
     
 {{ openstack_settings.config_base }}/openstack-dashboard/local_settings:
   file.managed:

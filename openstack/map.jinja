@@ -316,6 +316,11 @@
     'default_domain': 'default',
     'default_region': 'RegionOne',
     'default_role': 'user',
+    'admin_project_name': 'admin',
+    'admin_project_user': 'admin',
+    'admin_project_domain': 'default',
+    'admin_project_user_domain': 'default',
+    'service_project_name': 'service',
     
     'vnc_port': '6080',
     
@@ -392,9 +397,9 @@
     'hosts': {},
     
     'user': {
-      'admin': {
+      os_map.admin_project_user: {
         'password': passwords.get('ADMIN_PASS'),
-        'domain': os_map.get('default_domain'),
+        'domain': os_map.get('admin_project_user_domain'),
         'endpoint': 'admin'
       },
       'glance': {
@@ -598,12 +603,12 @@
     ],
     
     'project': {
-      'admin': {
-        'domain': os_map.get('default_domain'),
+      os_map.get('admin_project_name'): {
+        'domain': os_map.get('admin_project_domain'),
         'description': 'Admin project',
         'user': {
-          'admin': {
-            'domain': os_map.get('default_domain'),
+          os_map.get('admin_project_user'): {
+            'domain': os_map.get('admin_project_user_domain'),
             'description': 'Admin user',
             'role': [
               'admin',
@@ -735,7 +740,7 @@
     'nova': {
       'DEFAULT': {
         'auth_strategy': 'keystone',
-        'enabled_apis': ','.join(os_map.get('nova_apis')),
+        'enabled_apis': os_map.get('nova_apis'),
         'novncproxy_base_url': 'http://'+ hosts.get('controller') + ':' + os_map.get('vnc_port') + '/vnc_auto.html',
         'vncserver_listen': '$my_ip',
         'vncserver_proxyclient_address': '$my_ip',

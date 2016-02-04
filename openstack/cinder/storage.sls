@@ -7,6 +7,8 @@ include:
 cinder_storage packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.cinder_storage }}
+    - require:
+      - pkg: openstack dependencies
         
 {% if openstack_settings.services.cinder_storage is defined %}
 {% for service in openstack_settings.services.cinder_storage %}

@@ -7,6 +7,8 @@ include:
 nova_controller packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.nova_controller }}
+    - require:
+      - pkg: openstack dependencies
     
 nova_controller database:
   cmd.run:

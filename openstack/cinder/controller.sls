@@ -7,6 +7,8 @@ include:
 cinder_controller packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.cinder_controller }}
+    - require:
+      - pkg: openstack dependencies
     
 cinder_controller database:
   cmd.run:

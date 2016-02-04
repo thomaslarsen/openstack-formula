@@ -10,12 +10,13 @@ create network {{ name }}:
   cmd.run:
     - name: neutron net-create {{ name }} {% if network.shared is defined %}--shared{% endif %} {% if network.provider is defined %}--provider:physical_network {{ network.provider.physical_network }} --provider:network_type {{ network.provider.network_type }}{% endif %} {% if network.external is defined %}--router:external{% endif %}
     - env:
-      - OS_TOKEN: "{{ openstack_settings.passwords.KEYSTONE_ADMIN_TOKEN }}" 
-      - OS_URL: "{{ admin_url }}"
-      - OS_IDENTITY_API_VERSION: "{{ openstack_settings.keystone_api_version }}"
-      - OS_USERNAME: admin
+      - OS_AUTH_URL: "{{ admin_url }}"
+      - OS_PROJECT_DOMAIN_ID: {{ openstack_settings.admin_project_domain }}
+      - OS_USER_DOMAIN_ID: {{ openstack_settings.admin_project_user_domain }}
+      - OS_PROJECT_NAME: {{ openstack_settings.admin_project_name }}
+      - OS_USERNAME: {{ openstack_settings.admin_project_user }}
       - OS_PASSWORD: {{ openstack_settings.passwords.ADMIN_PASS }}
-      - require:
+    - require:
       - cmd: neutron_controller database
     - unless: neutron net-show {{ name }}
     
@@ -24,10 +25,11 @@ create subnet {{ sub_name }}:
   cmd.run:
     - name: neutron subnet-create {{ name }} {{subnet.ip }} --name {{ sub_name }} --dns-nameserver {{ subnet.dns }} --gateway {{ subnet.gateway }} {% if subnet.dhcp is defined %}--enable_dhcp=True --allocation-pool start={{ subnet.dhcp.start }},end={{ subnet.dhcp.end }} {% else %}--enable_dhcp=False {% endif %}
     - env:
-      - OS_TOKEN: "{{ openstack_settings.passwords.KEYSTONE_ADMIN_TOKEN }}" 
-      - OS_URL: "{{ admin_url }}"
-      - OS_IDENTITY_API_VERSION: "{{ openstack_settings.keystone_api_version }}"
-      - OS_USERNAME: admin
+      - OS_AUTH_URL: "{{ admin_url }}"
+      - OS_PROJECT_DOMAIN_ID: {{ openstack_settings.admin_project_domain }}
+      - OS_USER_DOMAIN_ID: {{ openstack_settings.admin_project_user_domain }}
+      - OS_PROJECT_NAME: {{ openstack_settings.admin_project_name }}
+      - OS_USERNAME: {{ openstack_settings.admin_project_user }}
       - OS_PASSWORD: {{ openstack_settings.passwords.ADMIN_PASS }}
     - require:
       - cmd: neutron_controller database
@@ -42,12 +44,13 @@ create router {{ name }}:
   cmd.run:
     - name: neutron router-create {{ name }}
     - env:
-      - OS_TOKEN: "{{ openstack_settings.passwords.KEYSTONE_ADMIN_TOKEN }}" 
-      - OS_URL: "{{ admin_url }}"
-      - OS_IDENTITY_API_VERSION: "{{ openstack_settings.keystone_api_version }}"
-      - OS_USERNAME: admin
+      - OS_AUTH_URL: "{{ admin_url }}"
+      - OS_PROJECT_DOMAIN_ID: {{ openstack_settings.admin_project_domain }}
+      - OS_USER_DOMAIN_ID: {{ openstack_settings.admin_project_user_domain }}
+      - OS_PROJECT_NAME: {{ openstack_settings.admin_project_name }}
+      - OS_USERNAME: {{ openstack_settings.admin_project_user }}
       - OS_PASSWORD: {{ openstack_settings.passwords.ADMIN_PASS }}
-      - require:
+    - require:
       - cmd: neutron_controller database
     - unless: neutron router-show {{ name }}
     
@@ -56,12 +59,13 @@ set gateway {{ router.gateway }} for router {{ name }}:
   cmd.run:
     - name: neutron router-gateway-set {{ name }} {{ router.gateway }}
     - env:
-      - OS_TOKEN: "{{ openstack_settings.passwords.KEYSTONE_ADMIN_TOKEN }}" 
-      - OS_URL: "{{ admin_url }}"
-      - OS_IDENTITY_API_VERSION: "{{ openstack_settings.keystone_api_version }}"
-      - OS_USERNAME: admin
+      - OS_AUTH_URL: "{{ admin_url }}"
+      - OS_PROJECT_DOMAIN_ID: {{ openstack_settings.admin_project_domain }}
+      - OS_USER_DOMAIN_ID: {{ openstack_settings.admin_project_user_domain }}
+      - OS_PROJECT_NAME: {{ openstack_settings.admin_project_name }}
+      - OS_USERNAME: {{ openstack_settings.admin_project_user }}
       - OS_PASSWORD: {{ openstack_settings.passwords.ADMIN_PASS }}
-      - require:
+    - require:
       - cmd: neutron_controller database
       - cmd: create router {{ name }}
       - cmd: create network {{ router.gateway }}
@@ -74,12 +78,13 @@ add interface {{ net_name }} to router {{ name }}:
   cmd.run:
     - name: neutron router-interface-add {{ name }} {{ net_name }}
     - env:
-      - OS_TOKEN: "{{ openstack_settings.passwords.KEYSTONE_ADMIN_TOKEN }}" 
-      - OS_URL: "{{ admin_url }}"
-      - OS_IDENTITY_API_VERSION: "{{ openstack_settings.keystone_api_version }}"
-      - OS_USERNAME: admin
+      - OS_AUTH_URL: "{{ admin_url }}"
+      - OS_PROJECT_DOMAIN_ID: {{ openstack_settings.admin_project_domain }}
+      - OS_USER_DOMAIN_ID: {{ openstack_settings.admin_project_user_domain }}
+      - OS_PROJECT_NAME: {{ openstack_settings.admin_project_name }}
+      - OS_USERNAME: {{ openstack_settings.admin_project_user }}
       - OS_PASSWORD: {{ openstack_settings.passwords.ADMIN_PASS }}
-      - require:
+    - require:
       - cmd: neutron_controller database
       - cmd: create subnet {{ net_name }}
     - unless: neutron router-port-list {{ name }} {{ net_name }}

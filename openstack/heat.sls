@@ -6,6 +6,8 @@ include:
 heat packages:
   pkg.installed:
     - pkgs: {{ openstack_settings.dependencies.heat }}
+    - require:
+      - pkg: openstack dependencies
     
 {% for sub, element in openstack_settings.config.heat.items() %}
 {% for file, conf in element.files.items() %}

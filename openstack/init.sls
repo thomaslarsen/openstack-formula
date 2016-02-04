@@ -15,6 +15,7 @@ openstack dependencies:
             - openstack-selinux
         - require:
             - pkg: openstack core
+            - sls: epel
       
 {% for host,ip in openstack_settings.nodes.items() %}
 {{ host }}-host:
