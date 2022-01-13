@@ -13,8 +13,8 @@
         '3.centos.pool.ntp.org'
       ],
     },
-    
-    
+
+
     'dependencies': {
       'keystone': [
         'openstack-keystone',
@@ -119,8 +119,8 @@
         'python-heatclient'
       ]
     },
-    
-    
+
+
     'services': {
       'glance': [
         'openstack-glance-api',
@@ -205,8 +205,8 @@
         'openstack-heat-engine'
       ]
     },
-    
-    
+
+
     'config': {
       'keystone': {
         'keystone': {
@@ -273,7 +273,7 @@
           }
         },
       },
-      'neutron_drivers': {  
+      'neutron_drivers': {
         'fwaas': {
           'path': 'neutron',
           'files': {
@@ -298,8 +298,8 @@
         }
       }
     },
-    
-    
+
+
     'db_table_test': {
       'keystone': 'project',
       'glance': 'images',
@@ -308,11 +308,11 @@
       'cinder_controller': 'volumes',
       'heat': 'stack'
     },
-    
+
     'config_base': '/etc',
-    
+
     'time_zone': 'Europe/London',
-    
+
     'default_domain': 'default',
     'default_region': 'RegionOne',
     'default_role': 'user',
@@ -321,27 +321,27 @@
     'admin_project_domain': 'default',
     'admin_project_user_domain': 'default',
     'service_project_name': 'service',
-    
+
     'vnc_port': '6080',
-    
+
     'rpc_backend': 'rabbit',
     'rabbit_user_id': 'openstack',
-    
+
     'memcache_port': '11211',
-    
+
     'keystone_public_port': '5000',
     'keystone_admin_port': '35357',
     'keystone_api_version': '3',
-    
+
     'glance_port': '9292',
-    
+
     'nova_port': '8774',
-    'nova_api_version': '2',    
+    'nova_api_version': '2',
     'nova_apis': [
       'osapi_compute',
       'metadata'
     ],
-    
+
     'neutron_port': '9696',
     'neutron_agents': [
       'metadata',
@@ -352,10 +352,10 @@
     'neutron_drivers': [
       'fwaas'
     ],
-    
+
     'cinder_port': '8776',
     'cinder_volumes_dir': '/var/lib/cinder/volumes',
-    
+
     'heat_orchestration_port': '8004',
     'heat_cloudformation_port': '8000',
     'heat_metadata_server_port': '8000',
@@ -373,7 +373,7 @@
 {% import_yaml "openstack/defaults.yaml" as default_passwords %}
 {% set passwords = salt['pillar.get']('openstack:passwords', default = default_passwords, merge = True) %}
 
-{% set hosts = salt['pillar.get']('openstack:hosts', 
+{% set hosts = salt['pillar.get']('openstack:hosts',
   default =
   {
       'controller': 'controller',
@@ -393,9 +393,9 @@
     'passwords': {},
 
     'nodes': {},
-    
+
     'hosts': {},
-    
+
     'user': {
       os_map.admin_project_user: {
         'password': passwords.get('ADMIN_PASS'),
@@ -433,7 +433,7 @@
         'endpoint': 'admin'
       }
     },
-    
+
     'domain': {
       os_map.get('heat_user_domain_name'): {
         'description': 'Stack projects and users',
@@ -447,7 +447,7 @@
         }
       }
     },
-    
+
     'service': {
       'keystone': {
         'description': 'Openstack Identity',
@@ -594,14 +594,14 @@
         }
       }
     },
-    
+
     'role': [
       'admin',
       'user',
       'heat_stack_owner',
       'heat_stack_user'
     ],
-    
+
     'project': {
       os_map.get('admin_project_name'): {
         'domain': os_map.get('admin_project_domain'),
@@ -659,20 +659,30 @@
         }
       }
     },
-    
+
     'verbose_log': {
-      'keystone': 'True',
-      'glance': 'True',
-      'nova': 'True',
-      'neutron': 'True'
+      'keystone': 'False',
+      'glance': 'False',
+      'nova': 'False',
+      'neutron': 'False',
+      'horizon': 'False',
+      'cinder': 'False',
+      'heat': 'False',
+      'swift': 'False',
+      'ceilometer': 'False',
     },
     'debug_log': {
-      'keystone': 'True',
-      'glance': 'True',
-      'nova': 'True',
-      'neutron': 'True'
+      'keystone': 'False',
+      'glance': 'False',
+      'nova': 'False',
+      'neutron': 'False',
+      'horizon': 'False',
+      'cinder': 'False',
+      'heat': 'False',
+      'swift': 'False',
+      'ceilometer': 'False',
     },
-        
+
     'keystone': {
       'DEFAULT': {
         'admin_token': passwords.get('KEYSTONE_ADMIN_TOKEN')
@@ -691,7 +701,7 @@
         'driver': 'memcache',
       }
     },
-    
+
     'glance_api': {
       'DEFAULT': {
         'notification_driver': 'noop'
@@ -716,7 +726,6 @@
         'username': 'glance',
         'password': passwords.get('GLANCE_PASS')
       }
-  
     },
     'glance_registry': {
       'DEFAULT': {
@@ -736,7 +745,7 @@
         'password': passwords.get('GLANCE_PASS')
       }
     },
-    
+
     'nova': {
       'DEFAULT': {
         'auth_strategy': 'keystone',
@@ -749,7 +758,7 @@
         'security_group_api': 'neutron',
         'compute_driver': 'libvirt.LibvirtDriver',
         'firewall_driver': 'nova.virt.firewall.NoopFirewallDriver',
-        'rpc_backend': os_map.get('rpc_backend')      
+        'rpc_backend': os_map.get('rpc_backend')
       },
       'database': {
         'connection': 'mysql://nova:' + passwords.get('NOVA_DBPASS') + '@' + hosts.get('database') + '/nova'
@@ -782,7 +791,7 @@
         'region_name': os_map.get('default_region'),
         'username': 'neutron',
         'password': passwords.get('NEUTRON_PASS'),
-        
+
         'service_metadata_proxy': 'True',
         'metadata_proxy_shared_secret': passwords.get('METADATA_SECRET')
       },
@@ -790,7 +799,7 @@
         'os_region_name': os_map.get('default_region')
       }
     },
-    
+
     'neutron': {
       'DEFAULT': {
         'auth_strategy': 'keystone',
@@ -869,7 +878,7 @@
         'region_name': os_map.get('default_region'),
         'username': 'neutron',
         'password': passwords.get('NEUTRON_PASS'),
-        
+
         'nova_metadata_ip': hosts.get('metadata'),
         'metadata_proxy_shared_secret': passwords.get('METADATA_SECRET')
       }
@@ -880,13 +889,13 @@
         'enabled': 'True'
       }
     },
-    
+
     'horizon': {
       'allowed_hosts': [
         '*'
       ],
       'cache_backend': 'django.core.cache.backends.memcached.MemcachedCache',
-      
+
       'enable_router': True,
       'enable_quotas': True,
       'enable_ipv6': True,
@@ -897,7 +906,7 @@
       'enable_vpn': True,
       'enable_fip_topology_check': True
     },
-    
+
     'cinder': {
       'DEFAULT': {
         'my_ip': salt['grains.get']('ipv4')[0],
@@ -927,7 +936,7 @@
         'lock_path': '/var/lib/cinder/tmp'
       }
     },
-    
+
     'heat': {
       'DEFAULT': {
         'rpc_backend': os_map.get('rpc_backend'),
@@ -961,15 +970,15 @@
         'user_domain_id': os_map.get('default_domain'),
         'username': 'heat',
         'password': passwords.get('HEAT_PASS')
-        
+
       },
       'clients_keystone': {
         'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
-        
+
       },
       'ec2authtoken': {
         'auth_uri': 'http://' + hosts.get('keystone') + ':' + os_map.get('keystone_public_port'),
-        
+
       }
     }
   },

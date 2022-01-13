@@ -115,7 +115,7 @@ SECRET_KEY='21744f3f7fd628fc0f48'
 CACHES = {
   'default': {
     'BACKEND': '{{ conf.cache_backend }}',
-    'LOCATION': '{{ settings.hosts.controller }}:{{ settings.memcache_port }}',
+    'LOCATION': '{{ settings.hosts.controller }}:{{ settings.memcache_port }}'
   }
 }
 
